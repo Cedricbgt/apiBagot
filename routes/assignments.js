@@ -24,6 +24,7 @@ function getAssignments(req, res){
 
 // Récupérer un assignment par son id (GET)
 function getAssignment(req, res){
+    console.log("GET assignment avec ID:", req.params.id);
     let assignmentId = req.params.id;
 
     Assignment.findOne({_id: assignmentId}, (err, assignment) =>{
@@ -33,6 +34,7 @@ function getAssignment(req, res){
             return;
         }
         if (!assignment) {
+            console.log('Assignment non trouvé:', assignmentId);
             res.status(404).json({error: 'Assignment non trouvé'});
             return;
         }
@@ -42,13 +44,13 @@ function getAssignment(req, res){
 
 // Ajout d'un assignment (POST)
 function postAssignment(req, res){
+    console.log("POST assignment reçu");
     let assignment = new Assignment();
     assignment.nom = req.body.nom;
     assignment.dateDeRendu = req.body.dateDeRendu;
     assignment.rendu = req.body.rendu || false;
 
-    console.log("POST assignment reçu :");
-    console.log(assignment)
+    console.log("Données reçues:", assignment)
 
     assignment.save( (err, saved) => {
         if(err){
@@ -56,12 +58,14 @@ function postAssignment(req, res){
             res.status(500).json({error: err.message});
             return;
         }
+        console.log("Assignment sauvegardé:", saved.nom);
         res.json({ message: `${assignment.nom} saved!`, data: saved})
     })
 }
 
 // Update d'un assignment (PUT)
 function updateAssignment(req, res) {
+    console.log("PUT assignment avec ID:", req.body._id);
     console.log("UPDATE recu assignment : ");
     console.log(req.body);
     
@@ -75,23 +79,28 @@ function updateAssignment(req, res) {
             res.status(404).json({error: 'Assignment non trouvé'});
             return;
         }
+        console.log("Assignment mis à jour:", assignment.nom);
         res.json({message: 'updated', data: assignment})
     });
 }
 
 // suppression d'un assignment (DELETE)
 function deleteAssignment(req, res) {
-
+    console.log("DELETE assignment avec ID:", req.params.id);
+    
     Assignment.findByIdAndDelete(req.params.id, (err, assignment) => {
         if (err) {
-            res.send(err);
+            console.error('Erreur deleteAssignment:', err);
+            res.status(500).json({error: err.message});
             return;
         }
         if (!assignment) {
+            console.log('Assignment non trouvé pour l\'ID:', req.params.id);
             res.status(404).json({message: 'Assignment non trouvé'});
             return;
         }
-        res.json({message: `${assignment.nom} deleted`});
+        console.log('Assignment supprimé:', assignment.nom);
+        res.json({message: `${assignment.nom} deleted`, data: assignment});
     })
 }
 
