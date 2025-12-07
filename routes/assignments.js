@@ -1,4 +1,5 @@
 let Assignment = require('../model/assignment');
+let mongoose = require('mongoose');
 
 // Récupérer tous les assignments (GET) avec pagination
 function getAssignments(req, res){
@@ -26,8 +27,15 @@ function getAssignments(req, res){
 function getAssignment(req, res){
     console.log("GET assignment avec ID:", req.params.id);
     let assignmentId = req.params.id;
+    let query;
 
-    Assignment.findOne({_id: assignmentId}, (err, assignment) =>{
+    if (mongoose.Types.ObjectId.isValid(assignmentId)) {
+        query = Assignment.findById(assignmentId);
+    } else {
+        query = Assignment.findOne({id: assignmentId});
+    }
+
+    query.exec((err, assignment) =>{
         if(err){
             console.error('Erreur getAssignment:', err);
             res.status(500).json({error: err.message});
@@ -65,11 +73,19 @@ function postAssignment(req, res){
 
 // Update d'un assignment (PUT)
 function updateAssignment(req, res) {
-    console.log("PUT assignment avec ID:", req.body._id);
     console.log("UPDATE recu assignment : ");
     console.log(req.body);
     
-    Assignment.findByIdAndUpdate(req.body._id, req.body, {new: true}, (err, assignment) => {
+    let assignmentId = req.body._id || req.body.id;
+    let query;
+
+    if (mongoose.Types.ObjectId.isValid(assignmentId)) {
+        query = Assignment.findByIdAndUpdate(assignmentId, req.body, {new: true});
+    } else {
+        query = Assignment.findOneAndUpdate({id: assignmentId}, req.body, {new: true});
+    }
+
+    query.exec((err, assignment) => {
         if (err) {
             console.log('Erreur updateAssignment:', err);
             res.status(500).json({error: err.message});
@@ -87,21 +103,29 @@ function updateAssignment(req, res) {
 // suppression d'un assignment (DELETE)
 function deleteAssignment(req, res) {
     console.log("DELETE assignment avec ID:", req.params.id);
+    let assignmentId = req.params.id;
+    let query;
+
+    if (mongoose.Types.ObjectId.isValid(assignmentId)) {
+        query = Assignment.findByIdAndDelete(assignmentId);
+    } else {
+        query = Assignment.findOneAndDelete({id: assignmentId});
+    }
     
-    Assignment.findByIdAndDelete(req.params.id, (err, assignment) => {
+    query.exec((err, assignment) => {
         if (err) {
             console.error('Erreur deleteAssignment:', err);
             res.status(500).json({error: err.message});
             return;
         }
         if (!assignment) {
-            console.log('Assignment non trouvé pour l\'ID:', req.params.id);
+            console.log('Assignment non trouvé pour l\'ID:', assignmentId);
             res.status(404).json({message: 'Assignment non trouvé'});
             return;
         }
-        console.log('Assignment supprimé:', assignment.nom);
-        res.json({message: `${assignment.nom} deleted`, data: assignment});
-    })
+        console.log("Assignment supprimé:", assignment.nom);
+        res.json({message: `${assignment.nom} deleted`});
+    });
 }
 
 
