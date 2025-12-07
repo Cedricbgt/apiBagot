@@ -6,6 +6,19 @@ function getAssignments(req, res){
     // Récupérer les paramètres de pagination depuis les query params
     let aggregateQuery = Assignment.aggregate();
     
+    // Filtrage
+    let match = {};
+    if (req.query.search) {
+        match.nom = { $regex: req.query.search, $options: 'i' }; // Recherche insensible à la casse
+    }
+    if (req.query.rendu !== undefined && req.query.rendu !== 'all') {
+        match.rendu = (req.query.rendu === 'true');
+    }
+    
+    if (Object.keys(match).length > 0) {
+        aggregateQuery.match(match);
+    }
+
     Assignment.aggregatePaginate(
         aggregateQuery,
         {
