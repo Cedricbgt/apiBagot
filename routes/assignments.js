@@ -13,9 +13,10 @@ function getAssignments(req, res){
         },
         (err, assignments) => {
             if(err){
-                res.send(err);
+                console.error('Erreur getAssignments:', err);
+                res.status(500).json({error: err.message});
             } else {
-                res.send(assignments);
+                res.json(assignments);
             }
         }
     );
@@ -25,8 +26,16 @@ function getAssignments(req, res){
 function getAssignment(req, res){
     let assignmentId = req.params.id;
 
-    Assignment.findOne({id: assignmentId}, (err, assignment) =>{
-        if(err){res.send(err)}
+    Assignment.findOne({_id: assignmentId}, (err, assignment) =>{
+        if(err){
+            console.error('Erreur getAssignment:', err);
+            res.status(500).json({error: err.message});
+            return;
+        }
+        if (!assignment) {
+            res.status(404).json({error: 'Assignment non trouvé'});
+            return;
+        }
         res.json(assignment);
     })
 }
@@ -34,19 +43,20 @@ function getAssignment(req, res){
 // Ajout d'un assignment (POST)
 function postAssignment(req, res){
     let assignment = new Assignment();
-    assignment.id = req.body.id;
     assignment.nom = req.body.nom;
     assignment.dateDeRendu = req.body.dateDeRendu;
-    assignment.rendu = req.body.rendu;
+    assignment.rendu = req.body.rendu || false;
 
     console.log("POST assignment reçu :");
     console.log(assignment)
 
-    assignment.save( (err) => {
+    assignment.save( (err, saved) => {
         if(err){
-            res.send('cant post assignment ', err);
+            console.error('Erreur postAssignment:', err);
+            res.status(500).json({error: err.message});
+            return;
         }
-        res.json({ message: `${assignment.nom} saved!`})
+        res.json({ message: `${assignment.nom} saved!`, data: saved})
     })
 }
 
@@ -54,25 +64,32 @@ function postAssignment(req, res){
 function updateAssignment(req, res) {
     console.log("UPDATE recu assignment : ");
     console.log(req.body);
+    
     Assignment.findByIdAndUpdate(req.body._id, req.body, {new: true}, (err, assignment) => {
         if (err) {
-            console.log(err);
-            res.send(err)
-        } else {
-          res.json({message: 'updated'})
+            console.log('Erreur updateAssignment:', err);
+            res.status(500).json({error: err.message});
+            return;
         }
-
-      // console.log('updated ', assignment)
+        if (!assignment) {
+            res.status(404).json({error: 'Assignment non trouvé'});
+            return;
+        }
+        res.json({message: 'updated', data: assignment})
     });
-
 }
 
 // suppression d'un assignment (DELETE)
 function deleteAssignment(req, res) {
 
-    Assignment.findByIdAndRemove(req.params.id, (err, assignment) => {
+    Assignment.findByIdAndDelete(req.params.id, (err, assignment) => {
         if (err) {
             res.send(err);
+            return;
+        }
+        if (!assignment) {
+            res.status(404).json({message: 'Assignment non trouvé'});
+            return;
         }
         res.json({message: `${assignment.nom} deleted`});
     })

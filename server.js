@@ -1,3 +1,6 @@
+// Charger les variables d'environnement du fichier .env
+require('dotenv').config();
+
 let express = require('express');
 let app = express();
 let bodyParser = require('body-parser');
@@ -7,13 +10,12 @@ let mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 mongoose.set('debug', true);
 
-// remplacer toute cette chaine par l'URI de connexion à votre propre base dans le cloud s
-const uri = 'mongodb+srv://cedric:QqmynpPyOPJ0H4PG@cluster0.ho17gdw.mongodb.net/assignementsDB?retryWrites=true&w=majority';
+// URI de connexion MongoDB - utiliser la variable d'environnement MONGODB_URI
+const uri = process.env.MONGODB_URI || 'mongodb+srv://cedric:QqmynpPyOPJ0H4PG@cluster0.ho17gdw.mongodb.net/assignementsDB?retryWrites=true&w=majority';
 
 const options = {
   useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useFindAndModify:false
+  useUnifiedTopology: true
 };
 
 mongoose.connect(uri, options)
@@ -31,7 +33,13 @@ app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  next();
+  
+  // Répondre aux preflight requests
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
 });
 
 // Pour les formulaires
